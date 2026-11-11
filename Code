@@ -1,0 +1,133 @@
+
+# DEFORESTATION ISSUE ANALYSIS USING MACHINE LEARNING
+# Algorithm: Support Vector Machine (SVM)
+
+# 1. Import Libraries
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.svm import SVC
+
+from sklearn.metrics import (
+    accuracy_score,
+    confusion_matrix,
+    classification_report,
+    precision_score,
+    recall_score,
+    f1_score
+)
+
+# 2. Import Dataset
+data = pd.read_csv("deforestation.csv")
+
+print("Dataset Imported Successfully!")
+print(data.head())
+
+# 3. Clean Column Names
+data.columns = data.columns.str.strip().str.upper()
+
+# 4. Select Target Column
+# Change this name if your dataset uses another target column
+target = "DEFORESTATION"
+
+# 5. Separate Input and Output
+X = data.drop(target, axis=1)
+y = data[target]
+
+# 6. Handle Missing Values
+for col in X.columns:
+    if X[col].dtype == "object":
+        X[col] = X[col].fillna(X[col].mode()[0])
+    else:
+        X[col] = X[col].fillna(X[col].median())
+
+# 7. Convert Categorical Data into Numbers
+X = pd.get_dummies(X, drop_first=True)
+
+# Convert output labels into numbers
+encoder = LabelEncoder()
+y = encoder.fit_transform(y.astype(str))
+
+# 8. Split Dataset
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y,
+    test_size=0.2,
+    random_state=42,
+    stratify=y
+)
+
+# 9. Feature Scaling
+scaler = StandardScaler()
+
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# 10. Create SVM Model
+model = SVC(kernel="linear")
+
+# 11. Train Model
+model.fit(X_train, y_train)
+
+print("\nModel Training Completed!")
+
+# 12. Make Predictions
+y_pred = model.predict(X_test)
+
+# 13. Calculate Accuracy
+accuracy = accuracy_score(y_test, y_pred)
+
+print("\nModel Accuracy:", round(accuracy * 100, 2), "%")
+
+# 14. Classification Report
+print("\nClassification Report:")
+print(classification_report(
+    y_test,
+    y_pred,
+    target_names=encoder.classes_
+))
+
+# 15. Calculate Performance Metrics
+print("Precision:", precision_score(
+    y_test, y_pred, average="weighted", zero_division=0
+))
+
+print("Recall:", recall_score(
+    y_test, y_pred, average="weighted", zero_division=0
+))
+
+print("F1 Score:", f1_score(
+    y_test, y_pred, average="weighted", zero_division=0
+))
+
+# 16. Confusion Matrix
+cm = confusion_matrix(y_test, y_pred)
+
+plt.figure(figsize=(7, 5))
+
+sns.heatmap(
+    cm,
+    annot=True,
+    fmt="d",
+    cmap="Greens",
+    xticklabels=encoder.classes_,
+    yticklabels=encoder.classes_
+)
+
+plt.title("Deforestation Analysis - SVM")
+plt.xlabel("Predicted Result")
+plt.ylabel("Actual Result")
+plt.show()
+
+# 17. Sample Prediction
+sample = X_test[0].reshape(1, -1)
+
+prediction = model.predict(sample)
+
+print("\nSample Prediction:")
+print("Predicted Class:", encoder.inverse_transform(prediction)[0])
+
+print("\nProject Completed Successfully!")
